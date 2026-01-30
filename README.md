@@ -369,7 +369,7 @@ ORDER BY
 - 0% late payment history: **6.8% default rate** (136,644 customers)
 - 0-10% late payment rate: **7.9% default rate** (74,725 customers)
 - 10-30% late payment rate: **10.1% default rate** (62,048 customers)
-- >30% late payment rate: **9.9% default rate** (34,094 customers)
+- \>30% late payment rate: **9.9% default rate** (34,094 customers)
 
 **Business Recommendation:** Customers with bureau late payment rates above 10% have 50% higher default risk.
 
