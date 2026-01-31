@@ -1,0 +1,543 @@
+{
+  "datasets": [
+    {
+      "name": "d2b94841",
+      "displayName": "test_dataset_b",
+      "queryLines": [
+        "SELECT * FROM workspace.gold_creditrisk.test_dataset_b"
+      ]
+    },
+    {
+      "name": "43fe3f8e",
+      "displayName": "Cell 1",
+      "queryLines": [
+        "SELECT\n",
+        "  CASE\n",
+        "    WHEN inst_payment_late_rate = 0 THEN '0%'\n",
+        "    WHEN inst_payment_late_rate < 0.1 THEN '0–10%'\n",
+        "    WHEN inst_payment_late_rate < 0.3 THEN '10–30%'\n",
+        "    ELSE '>30%'\n",
+        "  END AS late_payment_bucket,\n",
+        "  ROUND(AVG(TARGET), 4) AS default_rate,\n",
+        "  COUNT(*) AS customers,\n",
+        "  CASE\n",
+        "    WHEN inst_payment_late_rate = 0 THEN 1\n",
+        "    WHEN inst_payment_late_rate < 0.1 THEN 2\n",
+        "    WHEN inst_payment_late_rate < 0.3 THEN 3\n",
+        "    ELSE 4\n",
+        "  END AS sort_key\n",
+        "FROM workspace.gold_creditrisk.train_dataset_b\n",
+        "GROUP BY late_payment_bucket, sort_key\n",
+        "ORDER BY sort_key;"
+      ]
+    },
+    {
+      "name": "7adf50db",
+      "displayName": "Untitled dataset",
+      "queryLines": [
+        "-- SELECT\n",
+        "--   severe_dpd_flag,\n",
+        "--   COUNT(*) AS customers,\n",
+        "--   ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER (), 2) AS pct\n",
+        "-- FROM workspace.gold_creditrisk.train_dataset_b\n",
+        "-- GROUP BY severe_dpd_flag\n",
+        "-- ORDER BY severe_dpd_flag;\n",
+        "\n",
+        "SELECT\n",
+        "  severe_dpd_flag,\n",
+        "  COUNT(*) AS customers,\n",
+        "  ROUND(AVG(TARGET), 4) AS default_rate\n",
+        "FROM workspace.gold_creditrisk.train_dataset_b\n",
+        "GROUP BY severe_dpd_flag\n",
+        "ORDER BY severe_dpd_flag;\n",
+        "\n"
+      ]
+    },
+    {
+      "name": "091f5440",
+      "displayName": "Cell 1",
+      "queryLines": [
+        "SELECT\n",
+        "  CASE\n",
+        "    WHEN inst_payment_late_rate = 0 THEN '0%'\n",
+        "    WHEN inst_payment_late_rate < 0.1 THEN '0–10%'\n",
+        "    WHEN inst_payment_late_rate < 0.3 THEN '10–30%'\n",
+        "    ELSE '>30%'\n",
+        "  END AS late_payment_bucket,\n",
+        "  ROUND(AVG(TARGET), 4) AS default_rate,\n",
+        "  COUNT(*) AS customers,\n",
+        "  CASE\n",
+        "    WHEN inst_payment_late_rate = 0 THEN 1\n",
+        "    WHEN inst_payment_late_rate < 0.1 THEN 2\n",
+        "    WHEN inst_payment_late_rate < 0.3 THEN 3\n",
+        "    ELSE 4\n",
+        "  END AS sort_key\n",
+        "FROM workspace.gold_creditrisk.train_dataset_b\n",
+        "GROUP BY late_payment_bucket, sort_key\n",
+        "ORDER BY sort_key;"
+      ]
+    },
+    {
+      "name": "9ac80eee",
+      "displayName": "Untitled dataset",
+      "queryLines": [
+        "-- SELECT\n",
+        "--   severe_dpd_flag,\n",
+        "--   COUNT(*) AS customers,\n",
+        "--   ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER (), 2) AS pct\n",
+        "-- FROM workspace.gold_creditrisk.train_dataset_b\n",
+        "-- GROUP BY severe_dpd_flag\n",
+        "-- ORDER BY severe_dpd_flag;\n",
+        "\n",
+        "SELECT\n",
+        "  severe_dpd_flag,\n",
+        "  COUNT(*) AS customers,\n",
+        "  ROUND(AVG(TARGET), 4) AS default_rate\n",
+        "FROM workspace.gold_creditrisk.train_dataset_b\n",
+        "GROUP BY severe_dpd_flag\n",
+        "ORDER BY severe_dpd_flag;\n",
+        "\n"
+      ]
+    },
+    {
+      "name": "deb410df",
+      "displayName": "Feature lift chart",
+      "queryLines": [
+        "WITH base AS (\n",
+        "  SELECT\n",
+        "    CASE\n",
+        "      WHEN inst_payment_late_rate = 0 THEN '0%'\n",
+        "      WHEN inst_payment_late_rate < 0.1 THEN '0–10%'\n",
+        "      WHEN inst_payment_late_rate < 0.3 THEN '10–30%'\n",
+        "      ELSE '>30%'\n",
+        "    END AS bucket,\n",
+        "    TARGET,\n",
+        "    CASE\n",
+        "      WHEN inst_payment_late_rate = 0 THEN 1\n",
+        "      WHEN inst_payment_late_rate < 0.1 THEN 2\n",
+        "      WHEN inst_payment_late_rate < 0.3 THEN 3\n",
+        "      ELSE 4\n",
+        "    END AS sort_key\n",
+        "  FROM workspace.gold_creditrisk.train_dataset_b\n",
+        "),\n",
+        "overall AS (\n",
+        "  SELECT AVG(TARGET) AS overall_default_rate FROM base\n",
+        ")\n",
+        "SELECT\n",
+        "  bucket,\n",
+        "  ROUND(AVG(TARGET), 4) AS bucket_default_rate,\n",
+        "  ROUND(AVG(TARGET) / o.overall_default_rate, 2) AS lift,\n",
+        "  b.sort_key\n",
+        "FROM base b\n",
+        "CROSS JOIN overall o\n",
+        "GROUP BY bucket, b.sort_key, o.overall_default_rate\n",
+        "ORDER BY b.sort_key;"
+      ]
+    },
+    {
+      "name": "3eeacde2",
+      "displayName": "Feature coverage vs risk",
+      "queryLines": [
+        "SELECT\n",
+        "  CASE\n",
+        "    WHEN bureau_loan_cnt IS NULL THEN 'No Bureau'\n",
+        "    ELSE 'Has Bureau'\n",
+        "  END AS bureau_coverage,\n",
+        "  COUNT(*) AS customers,\n",
+        "  ROUND(AVG(TARGET), 4) AS default_rate\n",
+        "FROM workspace.gold_creditrisk.train_dataset\n",
+        "GROUP BY bureau_coverage;\n"
+      ]
+    },
+    {
+      "name": "bdaa9fa1",
+      "displayName": "Interaction graph",
+      "queryLines": [
+        "SELECT\n",
+        "  severe_dpd_flag,\n",
+        "  frequent_late_payer_flag,\n",
+        "  COUNT(*) AS customers,\n",
+        "  ROUND(AVG(TARGET), 4) AS default_rate\n",
+        "FROM workspace.gold_creditrisk.train_dataset_b\n",
+        "GROUP BY severe_dpd_flag, frequent_late_payer_flag\n",
+        "ORDER BY severe_dpd_flag, frequent_late_payer_flag;\n"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "34f16dc3",
+      "displayName": "CreditRisk",
+      "layout": [
+        {
+          "widget": {
+            "name": "c35f6aaf",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "091f5440",
+                  "fields": [
+                    {
+                      "name": "late_payment_bucket",
+                      "expression": "`late_payment_bucket`"
+                    },
+                    {
+                      "name": "avg(customers)",
+                      "expression": "AVG(`customers`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "late_payment_bucket",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "custom-order",
+                      "orderedValues": [
+                        "0%",
+                        "0–10%",
+                        "10–30%",
+                        ">30%"
+                      ]
+                    }
+                  }
+                },
+                "y": {
+                  "fieldName": "avg(customers)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              },
+              "frame": {
+                "title": "Feature bucket vs default rate",
+                "showTitle": true
+              },
+              "mark": {
+                "colors": [
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 1
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 2
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 3
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 4
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 5
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 6
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 7
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 8
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 9
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 10
+                  }
+                ],
+                "layout": "layer"
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 6,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "ce70a79e",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "9ac80eee",
+                  "fields": [
+                    {
+                      "name": "customers",
+                      "expression": "`customers`"
+                    },
+                    {
+                      "name": "severe_dpd_flag",
+                      "expression": "`severe_dpd_flag`"
+                    },
+                    {
+                      "name": "avg(default_rate)",
+                      "expression": "AVG(`default_rate`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "severe_dpd_flag",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "avg(default_rate)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "customers",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "label": {
+                  "show": false
+                }
+              },
+              "frame": {
+                "title": "Risk flag vs default rate",
+                "showTitle": true
+              },
+              "mark": {
+                "layout": "stack"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "edb225b3",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "deb410df",
+                  "fields": [
+                    {
+                      "name": "bucket",
+                      "expression": "`bucket`"
+                    },
+                    {
+                      "name": "avg(lift)",
+                      "expression": "AVG(`lift`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "bucket",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "custom-order",
+                      "orderedValues": [
+                        "0%",
+                        "0–10%",
+                        "10–30%",
+                        ">30%"
+                      ]
+                    }
+                  }
+                },
+                "y": {
+                  "fieldName": "avg(lift)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "label": {
+                  "show": false
+                }
+              },
+              "frame": {
+                "title": "Feature lift chart",
+                "showTitle": true
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 0,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "a7aed32c",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "3eeacde2",
+                  "fields": [
+                    {
+                      "name": "bureau_coverage",
+                      "expression": "`bureau_coverage`"
+                    },
+                    {
+                      "name": "avg(default_rate)",
+                      "expression": "AVG(`default_rate`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "bureau_coverage",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "avg(default_rate)",
+                  "displayName": "default_rate",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "bureau_coverage",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "label": {
+                  "show": false
+                }
+              },
+              "frame": {
+                "title": "Feature coverage vs risk",
+                "showTitle": true
+              },
+              "mark": {
+                "layout": "group"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 6,
+            "width": 3,
+            "height": 6
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS"
+    },
+    {
+      "name": "66458ee0",
+      "displayName": "Global Filters",
+      "layout": [
+        {
+          "widget": {
+            "name": "68aaa652",
+            "spec": {
+              "version": 2,
+              "widgetType": "filter-single-select",
+              "encodings": {},
+              "frame": {
+                "showTitle": true
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 1,
+            "height": 2
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_GLOBAL_FILTERS"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "canvasBackgroundColor": {
+        "light": "#F6FAFB",
+        "dark": "#1B1F23"
+      },
+      "widgetBackgroundColor": {
+        "light": "#FFFFFF",
+        "dark": "#2A2F35"
+      },
+      "widgetBorderColor": {
+        "light": "#D7E1E9",
+        "dark": "#3C444C"
+      },
+      "fontColor": {
+        "light": "#374151",
+        "dark": "#E4E9EE"
+      },
+      "selectionColor": {
+        "light": "#5FA8D3",
+        "dark": "#5FA8D3"
+      },
+      "visualizationColors": [
+        "#5FA8D3",
+        "#70BEE1",
+        "#89CCE7",
+        "#A1DAEC",
+        "#B3E6DC",
+        "#89C7A8",
+        "#6EAD80",
+        "#589F60",
+        "#478743",
+        "#356C2A"
+      ],
+      "widgetHeaderAlignment": "LEFT"
+    },
+    "applyModeEnabled": false
+  }
+}
