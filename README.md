@@ -32,19 +32,19 @@ This project implements a complete end-to-end machine learning pipeline for cred
 
 ### Layer Details
 
-**Bronze Layer** (`workspace.bronze_creditrisk`)
+**Bronze Layer** (`creditrisk_catalog.bronze_creditrisk`)
 - Raw data ingestion from CSV files
 - Schema inference and validation
 - Delta format for ACID compliance
 - Tables: `app_train`, `app_test`, `bureau`, `bureau_balance`, `credit_card_balance`, `installments_payments`, `POS_CASH_balance`, `previous_application`
 
-**Silver Layer** (`workspace.silver_creditrisk`)
+**Silver Layer** (`creditrisk_catalog.silver_creditrisk`)
 - Deduplication on `SK_ID_CURR` (primary key)
 - Data type standardization
 - Null handling and basic transformations
 - Same table structure as Bronze with cleansed data
 
-**Gold Layer** (`workspace.gold_creditrisk`)
+**Gold Layer** (`creditrisk_catalog.gold_creditrisk`)
 - Feature-engineered tables optimized for analytics and ML
 - Business logic applied:
   - Bureau credit history aggregations
@@ -69,7 +69,7 @@ All tables use Delta Lake format ensuring:
 
 ```python
 # Delta write with overwrite mode
-df.write.format('delta').mode('overwrite').saveAsTable('workspace.silver_creditrisk.app_train')
+df.write.format('delta').mode('overwrite').saveAsTable('creditrisk_catalog.silver_creditrisk.app_train')
 
 # Schema evolution supported
 # Time travel capabilities for auditing
@@ -122,7 +122,7 @@ for layer in ["bronze", "silver", "gold"]:
 ### Schema Organization
 
 ```
-workspace (catalog)
+creditrisk_catalog (catalog)
 ├── bronze_creditrisk (schema)
 │   ├── app_train
 │   ├── app_test
@@ -149,12 +149,12 @@ workspace (catalog)
 **Governance SQL:**
 ```sql
 -- Schema-level grants
-GRANT ALL PRIVILEGES ON SCHEMA workspace.gold_creditrisk TO `admins@company.com`;
-GRANT SELECT ON SCHEMA workspace.gold_creditrisk TO `analysts@company.com`;
-GRANT SELECT ON SCHEMA workspace.gold_creditrisk TO `AIMLDS@ds.com`;
+GRANT ALL PRIVILEGES ON SCHEMA creditrisk_catalog.gold_creditrisk TO `admins@company.com`;
+GRANT SELECT ON SCHEMA creditrisk_catalog.gold_creditrisk TO `analysts@company.com`;
+GRANT SELECT ON SCHEMA creditrisk_catalog.gold_creditrisk TO `AIMLDS@ds.com`;
 
 -- Table-level grants for sensitive data
-GRANT SELECT ON TABLE workspace.gold_creditrisk.train_dataset TO `analysts@company.com`;
+GRANT SELECT ON TABLE creditrisk_catalog.gold_creditrisk.train_dataset TO `analysts@company.com`;
 ```
 
 **Column-Level Security:**
@@ -298,7 +298,7 @@ install_features = (
 **Business Logic:**
 ```python
 # Start with base application data
-train_final = spark.table("workspace.silver_creditrisk.app_train")
+train_final = spark.table("creditrisk_catalog.silver_creditrisk.app_train")
 
 # Join all feature sets with left joins to preserve all customers
 train_final = (
@@ -317,7 +317,7 @@ for col in feature_cols:
 
 # Save final training dataset
 train_final.write.format('delta').mode('overwrite') \
-    .saveAsTable('workspace.gold_creditrisk.train_dataset')
+    .saveAsTable('creditrisk_catalog.gold_creditrisk.train_dataset')
 ```
 
 **Validation:**
@@ -741,7 +741,7 @@ def display_importances(feature_importance_df):
 ```python
 def validate_gold_table(table_name):
     """Run data quality checks on gold tables"""
-    df = spark.table(f"workspace.gold_creditrisk.{table_name}")
+    df = spark.table(f"creditrisk_catalog.gold_creditrisk.{table_name}")
     
     # Check 1: Grain validation
     total_rows = df.count()
@@ -820,8 +820,8 @@ NONLIVINGAPARTMENTS_AVG        213514        69.44%
 **2. Create Unity Catalog Schemas**
 ```sql
 -- Run in Databricks SQL or notebook
-CREATE CATALOG IF NOT EXISTS workspace;
-USE CATALOG workspace;
+CREATE CATALOG IF NOT EXISTS creditrisk_catalog;
+USE CATALOG creditrisk_catalog;
 
 CREATE SCHEMA IF NOT EXISTS bronze_creditrisk;
 CREATE SCHEMA IF NOT EXISTS silver_creditrisk;
@@ -831,12 +831,12 @@ CREATE SCHEMA IF NOT EXISTS gold_creditrisk;
 **3. Configure Access Control**
 ```sql
 -- Grant permissions (adjust principals as needed)
-GRANT ALL PRIVILEGES ON SCHEMA workspace.bronze_creditrisk TO `admins@company.com`;
-GRANT ALL PRIVILEGES ON SCHEMA workspace.silver_creditrisk TO `admins@company.com`;
-GRANT ALL PRIVILEGES ON SCHEMA workspace.gold_creditrisk TO `admins@company.com`;
+GRANT ALL PRIVILEGES ON SCHEMA creditrisk_catalog.bronze_creditrisk TO `admins@company.com`;
+GRANT ALL PRIVILEGES ON SCHEMA creditrisk_catalog.silver_creditrisk TO `admins@company.com`;
+GRANT ALL PRIVILEGES ON SCHEMA creditrisk_catalog.gold_creditrisk TO `admins@company.com`;
 
-GRANT SELECT ON SCHEMA workspace.gold_creditrisk TO `analysts@company.com`;
-GRANT SELECT ON SCHEMA workspace.gold_creditrisk TO `AIMLDS@ds.com`;
+GRANT SELECT ON SCHEMA creditrisk_catalog.gold_creditrisk TO `analysts@company.com`;
+GRANT SELECT ON SCHEMA creditrisk_catalog.gold_creditrisk TO `AIMLDS@ds.com`;
 ```
 
 **4. Run Orchestration Pipeline**
@@ -855,13 +855,13 @@ GRANT SELECT ON SCHEMA workspace.gold_creditrisk TO `AIMLDS@ds.com`;
 ```sql
 -- Check row counts
 SELECT 'bronze_app_train' AS layer, COUNT(*) AS cnt 
-FROM workspace.bronze_creditrisk.app_train
+FROM creditrisk_catalog.bronze_creditrisk.app_train
 UNION ALL
 SELECT 'silver_app_train', COUNT(*) 
-FROM workspace.silver_creditrisk.app_train
+FROM creditrisk_catalog.silver_creditrisk.app_train
 UNION ALL
 SELECT 'gold_train_dataset', COUNT(*) 
-FROM workspace.gold_creditrisk.train_dataset;
+FROM creditrisk_catalog.gold_creditrisk.train_dataset;
 
 -- Expected: 307511 rows in each
 ```
